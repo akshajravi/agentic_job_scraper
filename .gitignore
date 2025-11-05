@@ -66,3 +66,10 @@ resume.docx
 
 # Node modules (if any)
 node_modules/
+
+# Session documentation (updates with each session)
+FIXES_APPLIED.md
+SCRAPING_COMPLETE.md
+TESTING_NEXT_STEPS.md
+SETUP_GUIDE.md
+ENV_SETUP.md
