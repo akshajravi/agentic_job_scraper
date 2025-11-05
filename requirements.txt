@@ -1,0 +1,38 @@
+# Web scraping and HTTP
+requests>=2.31.0
+beautifulsoup4>=4.12.3
+selenium>=4.18.0
+lxml>=5.1.0
+
+# Database
+sqlalchemy>=2.0.27
+alembic>=1.13.0
+
+# AI/ML for embeddings and matching
+openai>=1.12.0
+anthropic>=0.18.0
+sentence-transformers>=2.5.0
+numpy>=1.26.0
+
+# Job application automation
+playwright>=1.42.0
+
+# Email notifications
+python-dotenv>=1.0.0
+pydantic>=2.6.0
+pydantic-settings>=2.1.0
+
+# Scheduling
+schedule>=1.2.0
+APScheduler>=3.10.0
+
+# Utilities
+python-dateutil>=2.8.0
+pytz>=2024.1
+pyyaml>=6.0
+
+# PDF processing
+pdfplumber>=0.11.0
+
+# CLI interface
+rich>=13.7.0

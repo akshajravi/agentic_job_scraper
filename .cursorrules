@@ -1,0 +1,47 @@
+# Job Application Bot - Cursor Rules
+
+## Context
+This is a Playwright-based job application automation bot. Help me understand and debug code related to web scraping and form automation.
+
+## Code Style
+- Use type hints for all functions
+- Add docstrings to all functions explaining purpose, params, and return values
+- Use descriptive variable names (no single letters except loop counters)
+- Keep functions under 50 lines - break into smaller functions if needed
+
+## When Explaining Code
+1. Start with the high-level purpose of the function/file
+2. Explain the logical flow step-by-step
+3. Highlight any tricky parts or gotchas
+4. Mention what could go wrong and how it's handled
+5. Suggest improvements if you see any
+
+## Playwright-Specific Guidance
+- Explain why we use locators vs selectors
+- Point out when manual waits are unnecessary (Playwright auto-waits)
+- Suggest more resilient selector strategies when you see fragile ones
+- Warn about actions that might trigger anti-bot detection
+
+## Error Debugging
+When I share an error:
+1. Explain what the error means in plain English
+2. Identify the most likely cause
+3. Show me exactly which line(s) to change
+4. Explain WHY that fix works
+5. Suggest how to prevent similar errors
+
+## Code Review Focus Areas
+- Are selectors fragile? (suggest more robust alternatives)
+- Missing error handling?
+- Hardcoded values that should be config?
+- Unnecessary sleeps/waits?
+- Not checking if already applied?
+- Missing logs for debugging?
+- Database queries that could fail?
+- Credential management issues?
+
+## Preferences
+- Explain technical concepts in simple terms
+- Show code examples when explaining solutions
+- Prioritize maintainability and reliability over cleverness
+- Point out potential breaking changes when LinkedIn/Greenhouse/Lever update their sites
