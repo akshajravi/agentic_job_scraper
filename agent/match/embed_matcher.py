@@ -79,10 +79,20 @@ class EmbeddingMatcher:
         Returns:
             Human-readable explanation of why this is a good match
         """
+        # Parse structured data from JSON
+        try:
+            parsed_data = json.loads(resume_data.structured_data) if resume_data.structured_data else {}
+        except (json.JSONDecodeError, TypeError):
+            parsed_data = {}
+
+        skills = parsed_data.get('skills', [])
+        experiences = parsed_data.get('experiences', [])
+        education = parsed_data.get('education', {})
+
         resume_summary = f"""
-Skills: {', '.join(resume_data.skills[:10])}
-Latest Experience: {resume_data.experiences[0] if resume_data.experiences else 'N/A'}
-Education: {resume_data.education.get('degree', 'N/A')} from {resume_data.education.get('school', 'N/A')}
+Skills: {', '.join(skills[:10]) if skills else 'N/A'}
+Latest Experience: {experiences[0] if experiences else 'N/A'}
+Education: {education.get('degree', 'N/A')} from {education.get('school', 'N/A')}
 """
 
         job_summary = f"""
@@ -135,22 +145,34 @@ Provide a concise, specific reason focusing on relevant skills or experience."""
         # Check if resume already has embedding
         if resume_data.embedding:
             logger.info("Using cached resume embedding")
-            return resume_data.embedding
+            try:
+                return json.loads(resume_data.embedding)
+            except (json.JSONDecodeError, TypeError):
+                logger.warning("Failed to parse cached embedding, regenerating...")
+
+        # Parse structured data from JSON
+        try:
+            parsed_data = json.loads(resume_data.structured_data) if resume_data.structured_data else {}
+        except (json.JSONDecodeError, TypeError):
+            parsed_data = {}
+
+        skills = parsed_data.get('skills', [])
+        experiences = parsed_data.get('experiences', [])
+        education = parsed_data.get('education', {})
 
         # Generate resume summary text
         summary_parts = []
 
-        if resume_data.skills:
-            summary_parts.append(f"Technical Skills: {', '.join(resume_data.skills)}")
+        if skills:
+            summary_parts.append(f"Technical Skills: {', '.join(skills)}")
 
-        if resume_data.experiences:
-            for exp in resume_data.experiences[:3]:  # Top 3 experiences
+        if experiences:
+            for exp in experiences[:3]:  # Top 3 experiences
                 exp_text = f"{exp.get('title')} at {exp.get('company')}: {exp.get('description', '')[:200]}"
                 summary_parts.append(exp_text)
 
-        if resume_data.education:
-            edu = resume_data.education
-            summary_parts.append(f"{edu.get('degree')} from {edu.get('school')}")
+        if education:
+            summary_parts.append(f"{education.get('degree')} from {education.get('school')}")
 
         resume_summary = "\n".join(summary_parts)
         logger.info(f"Generating embedding for resume (length: {len(resume_summary)} chars)")
@@ -161,7 +183,7 @@ Provide a concise, specific reason focusing on relevant skills or experience."""
         with get_db() as db:
             resume = db.query(ResumeData).filter(ResumeData.id == resume_data.id).first()
             if resume:
-                resume.embedding = embedding
+                resume.embedding = json.dumps(embedding)
                 db.commit()
                 logger.info("Cached resume embedding in database")
 
@@ -186,11 +208,16 @@ Provide a concise, specific reason focusing on relevant skills or experience."""
         if threshold is None:
             threshold = settings.match_threshold
 
-        # Get resume embedding
-        resume_embedding = self.generate_resume_embedding(resume_data)
-
-        # Get all NEW jobs
+        # Get all NEW jobs and match them (everything in one session)
         with get_db() as db:
+            # Re-fetch resume data from database to ensure it's attached to this session
+            resume_data = db.query(ResumeData).filter(ResumeData.id == resume_data.id).first()
+            if not resume_data:
+                logger.error("Resume data not found in database")
+                return 0
+
+            # Get resume embedding
+            resume_embedding = self.generate_resume_embedding(resume_data)
             new_jobs = db.query(Job).filter(Job.status == JobStatus.NEW).all()
             logger.info(f"Found {len(new_jobs)} NEW jobs to match")
 

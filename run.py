@@ -21,7 +21,7 @@ from agent.ingest.normalize import JobNormalizer
 from agent.match.embed_matcher import match_jobs_for_resume
 from agent.match.resume_parser import parse_resume
 from agent.notify.email import send_summary_email
-from agent.storage.db import get_db
+from agent.storage.db import get_db, init_db
 from agent.storage.models import Job, JobStatus
 
 # Initialize Rich console
@@ -330,6 +330,9 @@ Examples:
     )
 
     args = parser.parse_args()
+
+    # Initialize database
+    init_db()
 
     # Determine which stages to run
     run_scrape = args.scrape or args.scrape_only or (not any([args.scrape, args.match, args.apply]))

@@ -158,19 +158,22 @@ Return ONLY valid JSON, no additional text."""
             resume_data = ResumeData(
                 file_hash=file_hash,
                 raw_text=resume_text,
-                parsed_data=parsed_data,
-                skills=parsed_data.get('skills', []),
-                experiences=parsed_data.get('experiences', []),
-                education=parsed_data.get('education', {}),
-                contact=parsed_data.get('contact', {})
+                structured_data=json.dumps(parsed_data),
+                file_path=str(pdf_path)
             )
 
             db.add(resume_data)
             db.commit()
             db.refresh(resume_data)
 
-            logger.info(f"Cached resume data in database (ID: {resume_data.id})")
-            return resume_data
+            # Store ID before expunging
+            resume_id = resume_data.id
+            logger.info(f"Cached resume data in database (ID: {resume_id})")
+
+            # Make a detached copy with all attributes loaded
+            db.expunge(resume_data)
+
+        return resume_data
 
     def get_resume_summary(self, resume_data: ResumeData) -> str:
         """Generate a text summary of the resume for embedding/matching.
@@ -183,14 +186,22 @@ Return ONLY valid JSON, no additional text."""
         """
         summary_parts = []
 
+        # Parse structured data from JSON
+        try:
+            parsed_data = json.loads(resume_data.structured_data) if resume_data.structured_data else {}
+        except (json.JSONDecodeError, TypeError):
+            parsed_data = {}
+
         # Add skills
-        if resume_data.skills:
-            summary_parts.append(f"Skills: {', '.join(resume_data.skills)}")
+        skills = parsed_data.get('skills', [])
+        if skills:
+            summary_parts.append(f"Skills: {', '.join(skills)}")
 
         # Add experiences
-        if resume_data.experiences:
+        experiences = parsed_data.get('experiences', [])
+        if experiences:
             exp_texts = []
-            for exp in resume_data.experiences:
+            for exp in experiences:
                 exp_text = f"{exp.get('title', 'Unknown')} at {exp.get('company', 'Unknown')}"
                 if 'description' in exp:
                     exp_text += f": {exp['description']}"
@@ -198,11 +209,11 @@ Return ONLY valid JSON, no additional text."""
             summary_parts.append("Experience: " + "; ".join(exp_texts))
 
         # Add education
-        if resume_data.education:
-            edu = resume_data.education
-            edu_text = f"Education: {edu.get('degree', 'Unknown')} from {edu.get('school', 'Unknown')}"
-            if 'graduation_date' in edu:
-                edu_text += f" (Graduated: {edu['graduation_date']})"
+        education = parsed_data.get('education', {})
+        if education:
+            edu_text = f"Education: {education.get('degree', 'Unknown')} from {education.get('school', 'Unknown')}"
+            if 'graduation_date' in education:
+                edu_text += f" (Graduated: {education['graduation_date']})"
             summary_parts.append(edu_text)
 
         return "\n\n".join(summary_parts)
