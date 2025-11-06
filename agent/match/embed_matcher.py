@@ -3,10 +3,12 @@ Embedding-based job matching using OpenAI embeddings and cosine similarity.
 """
 import json
 import logging
+import re
 from typing import List, Optional
 
 import numpy as np
 from openai import OpenAI
+from sqlalchemy import or_
 
 from agent.config import settings
 from agent.storage.db import get_db
@@ -193,6 +195,7 @@ Provide a concise, specific reason focusing on relevant skills or experience."""
         self,
         resume_data: ResumeData,
         threshold: float = None,
+        intern_only: bool = False,
         generate_reasons: bool = True
     ) -> int:
         """Match jobs against resume using embeddings.
@@ -200,6 +203,7 @@ Provide a concise, specific reason focusing on relevant skills or experience."""
         Args:
             resume_data: Parsed resume data with embedding
             threshold: Minimum similarity score for a match (default from settings)
+            intern_only: Only match intern positions
             generate_reasons: Whether to generate AI match reasons
 
         Returns:
@@ -218,8 +222,35 @@ Provide a concise, specific reason focusing on relevant skills or experience."""
 
             # Get resume embedding
             resume_embedding = self.generate_resume_embedding(resume_data)
-            new_jobs = db.query(Job).filter(Job.status == JobStatus.NEW).all()
-            logger.info(f"Found {len(new_jobs)} NEW jobs to match")
+
+            # Build job query
+            query = db.query(Job).filter(Job.status == JobStatus.NEW)
+
+            # Filter for intern positions if requested
+            if intern_only:
+                intern_keywords = [
+                    "intern",
+                    "internship",
+                    "graduate",
+                    "grad",
+                    "entry level",
+                    "entry-level",
+                    "early career",
+                    "junior"
+                ]
+                # Match title or description containing any intern keyword
+                intern_filter = or_(
+                    *[Job.title.ilike(f"%{keyword}%") for keyword in intern_keywords],
+                    *[Job.description.ilike(f"%{keyword}%") for keyword in intern_keywords]
+                )
+                query = query.filter(intern_filter)
+
+            new_jobs = query.all()
+
+            if intern_only:
+                logger.info(f"Found {len(new_jobs)} NEW intern jobs to match")
+            else:
+                logger.info(f"Found {len(new_jobs)} NEW jobs to match")
 
             if not new_jobs:
                 return 0
@@ -275,6 +306,7 @@ Provide a concise, specific reason focusing on relevant skills or experience."""
 def match_jobs_for_resume(
     resume_data: ResumeData,
     threshold: float = None,
+    intern_only: bool = False,
     generate_reasons: bool = True
 ) -> int:
     """Convenience function to match jobs against a resume.
@@ -282,10 +314,11 @@ def match_jobs_for_resume(
     Args:
         resume_data: Parsed resume data
         threshold: Minimum similarity score for a match
+        intern_only: Only match intern positions
         generate_reasons: Whether to generate AI match reasons
 
     Returns:
         Number of jobs matched
     """
     matcher = EmbeddingMatcher()
-    return matcher.match_jobs(resume_data, threshold, generate_reasons)
+    return matcher.match_jobs(resume_data, threshold, intern_only, generate_reasons)

@@ -86,12 +86,13 @@ def scrape_jobs() -> int:
     return total_new
 
 
-def match_jobs(resume_path: str, threshold: float = None) -> int:
+def match_jobs(resume_path: str, threshold: float = None, intern_only: bool = False) -> int:
     """Match jobs against resume using AI embeddings.
 
     Args:
         resume_path: Path to resume PDF
         threshold: Match score threshold (default from settings)
+        intern_only: Only match intern positions
 
     Returns:
         Number of jobs matched
@@ -113,7 +114,7 @@ def match_jobs(resume_path: str, threshold: float = None) -> int:
 
         # Generate embeddings and match
         task = progress.add_task("Generating embeddings and matching jobs...", total=None)
-        matched_count = match_jobs_for_resume(resume_data, threshold)
+        matched_count = match_jobs_for_resume(resume_data, threshold, intern_only)
         progress.update(task, description=f"[green][/green] Matched {matched_count} jobs", completed=True)
 
     # Display top matches
@@ -329,6 +330,12 @@ Examples:
         help="Minimum match score threshold (0.0 to 1.0)"
     )
 
+    parser.add_argument(
+        "--intern-only",
+        action="store_true",
+        help="Only match and apply to intern positions"
+    )
+
     args = parser.parse_args()
 
     # Initialize database
@@ -375,7 +382,7 @@ Examples:
 
         # Stage 2: Match
         if run_match:
-            stats['matched'] = match_jobs(args.resume, args.match_threshold)
+            stats['matched'] = match_jobs(args.resume, args.match_threshold, args.intern_only)
 
             # Get matched jobs for notification
             with get_db() as db:
