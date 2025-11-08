@@ -10,6 +10,7 @@ from pathlib import Path
 
 # Example questions that will now use predetermined answers (no API calls!)
 test_questions = [
+    # Basic compliance
     "Do you have any conflicts of interest?",
     "Have you worked here before?",
     "Are you authorized to work in the United States?",
@@ -18,9 +19,32 @@ test_questions = [
     "Were you referred by a current employee?",
     "Are you 18 years or older?",
     "Do you certify that all information is accurate?",
+    
+    # Source questions
     "How did you hear about this position?",
     "Where did you find this job posting?",
     "Please specify your source:",
+    
+    # Location and availability
+    "Country",
+    "Are you able to be onsite 5 days a week?",
+    "Are you willing to relocate?",
+    
+    # Clearance and export
+    "Do you have clearance eligibility?",
+    "Have you held a U.S. security clearance?",
+    "U.S. Person status",
+    "Export control requirements",
+    
+    # Company history
+    "Have you ever been employed by this company?",
+    "History with our company",
+    
+    # Demographics (EEO)
+    "Gender",
+    "Are you Hispanic/Latino?",
+    "Veteran Status",
+    "Disability Status",
 ]
 
 # Example questions that will still use OpenAI (creative answers needed)
@@ -92,12 +116,16 @@ def test_predetermined_answers():
     matched_count = len([q for q in test_questions if any(p.lower() in q.lower() for p in settings.predetermined_answers.keys())])
     print(f"\nSimple questions matched: {matched_count}/{len(test_questions)}")
     print(f"API calls saved per application: ~{matched_count}")
-    print(f"Estimated cost savings per application: $0.02-0.06")
-    print(f"\nWith 10 applications/day: Save ~$6-18/month in API costs!")
-    print("\n💡 Note: 'How did you hear' questions use smart logic:")
-    print("   - Text fields → 'Corporate Website'")
-    print("   - Dropdowns → Try 'Corporate Website', fallback to 'Other' if not available")
-    print("   - Follow-up 'Please specify' → 'Corporate Website'")
+    print(f"Estimated cost savings per application: $0.04-0.12 (at $0.002-0.005 per call)")
+    print(f"\nWith 10 applications/day:")
+    print(f"  - Daily savings: $0.40-1.20")
+    print(f"  - Monthly savings: $12-36")
+    print(f"  - Annual savings: $144-432 💰")
+    print("\n💡 Smart answer features:")
+    print("   ✓ School/LinkedIn/Website extracted from resume (no API call!)")
+    print("   ✓ Demographics auto-decline for privacy")
+    print("   ✓ Clearance & export control standard responses")
+    print("   ✓ 'How did you hear' with dropdown fallback logic")
     print()
 
 if __name__ == "__main__":

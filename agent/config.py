@@ -109,22 +109,58 @@ class Settings(BaseSettings):
         "acknowledge that": "Yes",
         
         # How did you hear about us / source questions
-        # For dropdowns: tries "Corporate Website" first, falls back to "Other" if not available
-        # For text fields: uses "Corporate Website"
-        "how did you hear": "Corporate Website",
-        "how did you find": "Corporate Website",
-        "where did you hear": "Corporate Website",
-        "where did you find": "Corporate Website",
-        "source of application": "Corporate Website",
-        "how did you learn": "Corporate Website",
-        "hear about this": "Corporate Website",
-        "find this position": "Corporate Website",
-        "find this job": "Corporate Website",
-        "learn about this": "Corporate Website",
-        "source of referral": "Corporate Website",
-        "please specify": "Corporate Website",  # For "Other" follow-up questions
-        "specify other": "Corporate Website",
-        "if other": "Corporate Website",
+        # For dropdowns: Common options include Google, Indeed, LinkedIn, Company Website, Friend, Recruiter, Other
+        # Use "Google job search" or similar generic option that's likely to be present
+        "how did you hear": "Google job search",
+        "how did you find": "Google job search",
+        "where did you hear": "Google job search",
+        "where did you find": "Google job search",
+        "source of application": "Google job search",
+        "how did you learn": "Google job search",
+        "hear about this": "Google job search",
+        "find this position": "Google job search",
+        "find this job": "Google job search",
+        "learn about this": "Google job search",
+        "source of referral": "Google job search",
+        "please specify": "Online job board",  # For "Other" follow-up questions
+        "specify other": "Online job board",
+        "if other": "Online job board",
+        
+        # Clearance and export control questions
+        "clearance eligibility": "Yes, I am eligible for a U.S. security clearance",
+        "security clearance": "N/A - have never held U.S. security clearance",
+        "u.s. person status": "Yes, I am a U.S. person",
+        "export control": "I understand and acknowledge these requirements",
+        "held a u.s. security clearance": "N/A - have never held U.S. security clearance",
+        
+        # Company history questions
+        "history with": "No, I have not previously worked for or applied to this company",
+        "ever been employed": "No",
+        "previously worked": "No",
+        "applied before": "No",
+        
+        # Onsite/location availability
+        "able to be onsite": "Yes",
+        "work onsite": "Yes",
+        "able to work onsite": "Yes",
+        "relocate": "Yes, I am willing to relocate",
+        "willing to relocate": "Yes",
+        
+        # Demographics (EEO questions) - User's actual information
+        "gender": "Male",
+        "race": "Asian",  # Will try "South Asian" first if available, fall back to "Asian"
+        "ethnicity": "Asian",
+        "asian": "South Asian",  # Specific Asian subgroup if asked
+        "hispanic/latino": "No",
+        "hispanic or latino": "No",
+        "veteran status": "I am not a protected veteran",
+        "protected veteran": "I am not a protected veteran",
+        "disability status": "No, I do not have a disability",
+        "disability": "No, I do not have a disability",
+        "have a disability": "No",
+        
+        # Location/country
+        "country": "United States",
     }
 
     @property

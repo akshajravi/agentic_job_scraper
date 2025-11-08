@@ -1,0 +1,235 @@
+
+
+╭────────────────────────────────────────────────────────╮
+│ Single Job Application Test                            │
+│ Testing the application system with one Greenhouse job │
+╰────────────────────────────────────────────────────────╯
+
+
+╭──────────────────────────────── Selected Job ────────────────────────────────╮
+│ Title: Early Career Software Engineer                                        │
+│ Company: Anduril                                                             │
+│ Location: Atlanta, GA                                                        │
+│ Match Score: 48.1%                                                           │
+│ Status: new                                                                  │
+│ URL:                                                                         │
+│ https://boards.greenhouse.io/andurilindustries/jobs/4824378007?utm_source=va │
+│ nsh                                                                          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Parsing resume...
+[12:26:28] INFO     Using cached resume data                resume_parser.py:146
+✓ Resume parsed successfully
+
+Initializing Greenhouse applier...
+✓ Applier initialized
+
+╭──────────────────────────────╮
+│ Starting Application Process │
+╰──────────────────────────────╯
+
+           INFO     Starting application for: Early Career     greenhouse.py:360
+                    Software Engineer at Anduril                                
+[12:26:31] INFO     Navigating to:                             greenhouse.py:369
+                    https://boards.greenhouse.io/andurilindust                  
+                    ries/jobs/4824378007?utm_source=vansh                       
+[12:26:36] INFO     Filled first name: Akshaj                  greenhouse.py:307
+           INFO     Filled last name: Ravi                     greenhouse.py:314
+           INFO     Filled phone: 214-616-5324                 greenhouse.py:329
+           INFO     Uploaded resume: resume.pdf                greenhouse.py:335
+[12:26:37] INFO     Detected 21 custom questions               greenhouse.py:287
+           INFO     Processing question: Country*              greenhouse.py:154
+           INFO     No predetermined answer found - using      greenhouse.py:163
+                    OpenAI API                                                  
+[12:26:42] INFO     HTTP Request: POST                           _client.py:1025
+                    https://api.openai.com/v1/chat/completions                  
+                    "HTTP/1.1 200 OK"                                           
+           INFO     Generated answer via OpenAI (length: 13    greenhouse.py:188
+                    chars)                                                      
+           INFO     Processing question: School*               greenhouse.py:154
+           INFO     No predetermined answer found - using      greenhouse.py:163
+                    OpenAI API                                                  
+[12:26:44] INFO     HTTP Request: POST                           _client.py:1025
+                    https://api.openai.com/v1/chat/completions                  
+                    "HTTP/1.1 200 OK"                                           
+           INFO     Generated answer via OpenAI (length: 20    greenhouse.py:188
+                    chars)                                                      
+           INFO     Processing question: LinkedIn Profile      greenhouse.py:154
+           INFO     No predetermined answer found - using      greenhouse.py:163
+                    OpenAI API                                                  
+[12:26:52] INFO     HTTP Request: POST                           _client.py:1025
+                    https://api.openai.com/v1/chat/completions                  
+                    "HTTP/1.1 200 OK"                                           
+           INFO     Generated answer via OpenAI (length: 999   greenhouse.py:188
+                    chars)                                                      
+           INFO     Processing question: Website               greenhouse.py:154
+           INFO     No predetermined answer found - using      greenhouse.py:163
+                    OpenAI API                                                  
+[12:26:58] INFO     HTTP Request: POST                           _client.py:1025
+                    https://api.openai.com/v1/chat/completions                  
+                    "HTTP/1.1 200 OK"                                           
+           INFO     Generated answer via OpenAI (length: 607   greenhouse.py:188
+                    chars)                                                      
+           INFO     Processing question: CLEARANCE ELIGIBILITY greenhouse.py:154
+                    - This position may require eligibility to                  
+                    obtain and maintain a U.S. security                         
+                    clearance.*                                                 
+           INFO     No predetermined answer found - using      greenhouse.py:163
+                    OpenAI API                                                  
+[12:27:03] INFO     HTTP Request: POST                           _client.py:1025
+                    https://api.openai.com/v1/chat/completions                  
+                    "HTTP/1.1 200 OK"                                           
+           INFO     Generated answer via OpenAI (length: 752   greenhouse.py:188
+                    chars)                                                      
+           INFO     Processing question: If you have held a    greenhouse.py:154
+                    U.S. security clearance in the past, what                   
+                    clearance level have you held? *                            
+           INFO     No predetermined answer found - using      greenhouse.py:163
+                    OpenAI API                                                  
+[12:27:07] INFO     HTTP Request: POST                           _client.py:1025
+                    https://api.openai.com/v1/chat/completions                  
+                    "HTTP/1.1 200 OK"                                           
+           INFO     Generated answer via OpenAI (length: 82    greenhouse.py:188
+                    chars)                                                      
+           INFO     Processing question: EXPORT CONTROLS -     greenhouse.py:154
+                    This position requires access to                            
+                    information and technology that is subject                  
+                    to U.S. export controls. Your responses to                  
+                    the questions below will be used solely to                  
+                    determine your eligibility under U.S. law                   
+                    to receive information and materials                        
+                    subject to U.S. export controls.*                           
+           INFO     No predetermined answer found - using      greenhouse.py:163
+                    OpenAI API                                                  
+[12:27:12] INFO     HTTP Request: POST                           _client.py:1025
+                    https://api.openai.com/v1/chat/completions                  
+                    "HTTP/1.1 200 OK"                                           
+           INFO     Generated answer via OpenAI (length: 849   greenhouse.py:188
+                    chars)                                                      
+           INFO     Processing question: U.S. WORK             greenhouse.py:154
+                    AUTHORIZATION*                                              
+           INFO     ✓ Matched predetermined answer for 'work    greenhouse.py:63
+                    authorization': Yes                                         
+           INFO     Using predetermined answer: Yes (saved API greenhouse.py:159
+                    call)                                                       
+           INFO     Processing question: Will you require      greenhouse.py:154
+                    sponsorship from Anduril for employment                     
+                    now or in the future (e.g, H1B visa)?*                      
+           INFO     ✓ Matched predetermined answer for 'require greenhouse.py:63
+                    sponsorship': No                                            
+           INFO     Using predetermined answer: No (saved API  greenhouse.py:159
+                    call)                                                       
+           INFO     Processing question: U.S. Person status    greenhouse.py:154
+                    and/or U.S. clearance eligibility is                        
+                    required for this role due to access                        
+                    requirements for U.S. export-controlled                     
+                    information/facilities and/or depending on                  
+                    program, are you eligible to meet this                      
+                    requirement? *                                              
+           INFO     No predetermined answer found - using      greenhouse.py:163
+                    OpenAI API                                                  
+[12:27:14] INFO     HTTP Request: POST                           _client.py:1025
+                    https://api.openai.com/v1/chat/completions                  
+                    "HTTP/1.1 200 OK"                                           
+           INFO     Generated answer via OpenAI (length: 103   greenhouse.py:188
+                    chars)                                                      
+           INFO     Processing question: HISTORY WITH ANDURIL* greenhouse.py:154
+           INFO     No predetermined answer found - using      greenhouse.py:163
+                    OpenAI API                                                  
+[12:27:18] INFO     HTTP Request: POST                           _client.py:1025
+                    https://api.openai.com/v1/chat/completions                  
+                    "HTTP/1.1 200 OK"                                           
+           INFO     Generated answer via OpenAI (length: 891   greenhouse.py:188
+                    chars)                                                      
+           INFO     Processing question: Have you ever been    greenhouse.py:154
+                    employed by Anduril or any company that                     
+                    Anduril has acquired?*                                      
+           INFO     No predetermined answer found - using      greenhouse.py:163
+                    OpenAI API                                                  
+[12:27:21] INFO     HTTP Request: POST                           _client.py:1025
+                    https://api.openai.com/v1/chat/completions                  
+                    "HTTP/1.1 200 OK"                                           
+           INFO     Generated answer via OpenAI (length: 260   greenhouse.py:188
+                    chars)                                                      
+           INFO     Processing question: CONFLICT OF INTEREST* greenhouse.py:154
+           INFO     ✓ Matched predetermined answer for          greenhouse.py:63
+                    'conflict of interest': No                                  
+           INFO     Using predetermined answer: No (saved API  greenhouse.py:159
+                    call)                                                       
+           INFO     Processing question: Are you able to be    greenhouse.py:154
+                    onsite 5 days a week in Atlanta, GA?*                       
+           INFO     No predetermined answer found - using      greenhouse.py:163
+                    OpenAI API                                                  
+[12:27:26] INFO     HTTP Request: POST                           _client.py:1025
+                    https://api.openai.com/v1/chat/completions                  
+                    "HTTP/1.1 200 OK"                                           
+           INFO     Generated answer via OpenAI (length: 374   greenhouse.py:188
+                    chars)                                                      
+           INFO     Processing question: Do you have a minimum greenhouse.py:154
+                    of 3 months - 2 years of technical work to                  
+                    include technical internship and able to                    
+                    start full time in 2026?*                                   
+           INFO     No predetermined answer found - using      greenhouse.py:163
+                    OpenAI API                                                  
+[12:27:30] INFO     HTTP Request: POST                           _client.py:1025
+                    https://api.openai.com/v1/chat/completions                  
+                    "HTTP/1.1 200 OK"                                           
+           INFO     Generated answer via OpenAI (length: 649   greenhouse.py:188
+                    chars)                                                      
+           INFO     Processing question: How did you hear      greenhouse.py:154
+                    about Anduril?*                                             
+           INFO     ✓ Matched predetermined answer for 'how did greenhouse.py:63
+                    you hear': Corporate Website                                
+           INFO     Using predetermined answer: Corporate      greenhouse.py:159
+                    Website (saved API call)                                    
+           INFO     Processing question: If other, please      greenhouse.py:154
+                    specify                                                     
+           INFO     ✓ Matched predetermined answer for 'please  greenhouse.py:63
+                    specify': Corporate Website                                 
+           INFO     Using predetermined answer: Corporate      greenhouse.py:159
+                    Website (saved API call)                                    
+           INFO     Processing question: Gender                greenhouse.py:154
+           INFO     No predetermined answer found - using      greenhouse.py:163
+                    OpenAI API                                                  
+[12:27:33] INFO     HTTP Request: POST                           _client.py:1025
+                    https://api.openai.com/v1/chat/completions                  
+                    "HTTP/1.1 200 OK"                                           
+           INFO     Generated answer via OpenAI (length: 57    greenhouse.py:188
+                    chars)                                                      
+           INFO     Processing question: Are you               greenhouse.py:154
+                    Hispanic/Latino?                                            
+           INFO     No predetermined answer found - using      greenhouse.py:163
+                    OpenAI API                                                  
+[12:27:35] INFO     HTTP Request: POST                           _client.py:1025
+                    https://api.openai.com/v1/chat/completions                  
+                    "HTTP/1.1 200 OK"                                           
+           INFO     Generated answer via OpenAI (length: 29    greenhouse.py:188
+                    chars)                                                      
+           INFO     Processing question: Veteran Status        greenhouse.py:154
+           INFO     No predetermined answer found - using      greenhouse.py:163
+                    OpenAI API                                                  
+[12:27:36] INFO     HTTP Request: POST                           _client.py:1025
+                    https://api.openai.com/v1/chat/completions                  
+                    "HTTP/1.1 200 OK"                                           
+           INFO     Generated answer via OpenAI (length: 59    greenhouse.py:188
+                    chars)                                                      
+           INFO     Processing question: Disability Status     greenhouse.py:154
+           INFO     No predetermined answer found - using      greenhouse.py:163
+                    OpenAI API                                                  
+[12:27:38] INFO     HTTP Request: POST                           _client.py:1025
+                    https://api.openai.com/v1/chat/completions                  
+                    "HTTP/1.1 200 OK"                                           
+           INFO     Generated answer via OpenAI (length: 59    greenhouse.py:188
+                    chars)                                                      
+           INFO     Requesting manual review...                greenhouse.py:403
+           INFO     Opening manual review UI in browser...      review_ui.py:385
+           INFO     Waiting for user decision...                review_ui.py:401
+[12:28:08] INFO     User decision: SKIPPED                      review_ui.py:417
+           INFO     Application skipped by user                greenhouse.py:407
+
+
+╭──────────────────────────────────────╮
+│ ✗ Application Failed                 │
+│                                      │
+│ Skipped by user during manual review │
+╰──────────────────────────────────────╯
