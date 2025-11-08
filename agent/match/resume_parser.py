@@ -144,6 +144,10 @@ Return ONLY valid JSON, no additional text."""
 
             if cached_resume and not force_reparse:
                 logger.info("Using cached resume data")
+                # Load all attributes before expunging
+                _ = (cached_resume.id, cached_resume.raw_text, cached_resume.structured_data,
+                     cached_resume.file_path, cached_resume.file_hash, cached_resume.embedding)
+                db.expunge(cached_resume)
                 return cached_resume
 
         # Extract and parse resume

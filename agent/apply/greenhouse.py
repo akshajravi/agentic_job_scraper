@@ -43,18 +43,125 @@ class GreenhouseApplier:
         if not self.resume_pdf_path.exists():
             raise FileNotFoundError(f"Resume PDF not found: {self.resume_pdf_path}")
 
-    def _answer_custom_question(self, question: str, field_type: str = "text") -> str:
-        """Use OpenAI to generate an answer to a custom application question.
+    def _check_predetermined_answer(self, question: str) -> Optional[str]:
+        """Check if question matches a predetermined answer pattern.
+        
+        This avoids unnecessary OpenAI API calls for simple yes/no questions
+        like "Do you have any conflicts?" or "Have you worked here before?"
+        
+        Args:
+            question: The question text from the application form.
+            
+        Returns:
+            Predetermined answer if pattern matches, None otherwise.
+        """
+        question_lower = question.lower()
+        
+        # Check each predetermined answer pattern
+        for pattern, answer in settings.predetermined_answers.items():
+            if pattern.lower() in question_lower:
+                logger.info(f"✓ Matched predetermined answer for '{pattern}': {answer}")
+                return answer
+        
+        return None
+
+    def _build_custom_answer_messages(
+        self,
+        question: str,
+        resume_context: str,
+        field_type: str,
+        options: Optional[List[str]] = None
+    ) -> List[Dict[str, str]]:
+        """Build chat messages for answering a custom application question.
 
         Args:
-            question: The question text
-            field_type: Type of form field (text, textarea, select, etc.)
+            question: The question text from the application form.
+            resume_context: Brief, structured resume context for grounding.
+            field_type: Field type (e.g., "text", "textarea", "select", "yesno").
+            options: Optional list of allowed options for select fields.
 
         Returns:
-            Generated answer
+            Messages formatted for chat completion API.
         """
-        logger.info(f"Generating answer for: {question}")
+        # Field-specific guidance
+        length_rules = (
+            "If the question is yes/no, answer strictly 'Yes' or 'No'. "
+            "For short text fields, keep answers under 100 words. "
+            "For longer text fields (cover-letter style), write 200-300 words."
+        )
 
+        if field_type.lower() in {"yesno", "yes_no", "boolean"}:
+            length_rules = "Answer strictly 'Yes' or 'No'."
+        elif field_type.lower() in {"text"}:
+            length_rules = "Keep the answer under 100 words."
+        elif field_type.lower() in {"textarea", "longtext", "long_text"}:
+            length_rules = "Write 200-300 words, concise and focused."
+        elif field_type.lower() in {"select", "dropdown"}:
+            if options:
+                # Constrain output to exactly one of the provided options
+                joined = ", ".join(options)
+                length_rules = (
+                    "Return exactly one of the provided options verbatim with no extra text: "
+                    f"{joined}."
+                )
+            else:
+                length_rules = "Return a concise option label with no extra text."
+
+        # Core style and grounding guidance
+        system_content = (
+            "You are helping fill out a job application. Use a neutral, professional tone "
+            "with light humanization: use contractions, vary sentence length, avoid clichés "
+            "and generic openers, and prefer concrete specifics grounded in the resume. "
+            "Be honest and grounded: do not fabricate facts. If the resume lacks a detail, "
+            "you may lightly extrapolate to keep flow using brief qualifiers such as 'not "
+            "specified in my resume' or 'typically', but do not invent dates, numbers, or "
+            "employers. "
+            + length_rules
+        )
+
+        user_content = (
+            f"Resume Context:\n{resume_context}\n\n"
+            f"Question: {question}\n\n"
+            "Provide a professional answer suitable for a job application."
+        )
+
+        # If options are present, include them in user message for visibility
+        if field_type.lower() in {"select", "dropdown"} and options:
+            user_content += "\nOptions (choose exactly one, return only the option text):\n- " + "\n- ".join(options)
+
+        return [
+            {"role": "system", "content": system_content},
+            {"role": "user", "content": user_content},
+        ]
+
+    def _answer_custom_question(self, question: str, field_type: str = "text", options: Optional[List[str]] = None) -> str:
+        """Generate an answer to a custom application question.
+
+        High-level: 
+        1. First checks if question matches a predetermined answer pattern (e.g., "conflicts", "worked here before")
+        2. If no match, uses OpenAI to generate a creative, personalized answer
+        
+        This approach significantly reduces API costs by avoiding unnecessary calls for simple questions.
+
+        Args:
+            question: The question text.
+            field_type: Type of form field (e.g., "text", "textarea", "select").
+            options: Optional list of options (for select/dropdown fields).
+
+        Returns:
+            Generated answer string suitable for direct form filling.
+        """
+        logger.info(f"Processing question: {question}")
+
+        # STEP 1: Check for predetermined answers first (no API call needed!)
+        predetermined = self._check_predetermined_answer(question)
+        if predetermined:
+            logger.info(f"Using predetermined answer: {predetermined} (saved API call)")
+            return predetermined
+
+        # STEP 2: Use OpenAI for creative/personalized questions
+        logger.info("No predetermined answer found - using OpenAI API")
+        
         resume_context = f"""
 Name: {self.resume_data.contact.get('name', 'Unknown')}
 Skills: {', '.join(self.resume_data.skills[:15])}
@@ -63,32 +170,22 @@ Education: {self.resume_data.education.get('degree', 'N/A')} from {self.resume_d
 """
 
         try:
+            messages = self._build_custom_answer_messages(
+                question=question,
+                resume_context=resume_context,
+                field_type=field_type,
+                options=options,
+            )
+
             response = self.openai_client.chat.completions.create(
                 model="gpt-4-turbo-preview",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": """You are helping fill out a job application. Answer questions concisely and professionally based on the candidate's resume.
-For yes/no questions, answer with just "Yes" or "No".
-For short text fields, keep answers under 100 words.
-For longer text fields (cover letters, etc.), you can write 200-300 words."""
-                    },
-                    {
-                        "role": "user",
-                        "content": f"""Resume Context:
-{resume_context}
-
-Question: {question}
-
-Provide a professional answer suitable for a job application. Be honest and based only on the resume information provided."""
-                    }
-                ],
+                messages=messages,
                 temperature=0.5,
                 max_tokens=400
             )
 
             answer = response.choices[0].message.content.strip()
-            logger.info(f"Generated answer (length: {len(answer)} chars)")
+            logger.info(f"Generated answer via OpenAI (length: {len(answer)} chars)")
             return answer
 
         except Exception as e:
@@ -290,8 +387,9 @@ Provide a professional answer suitable for a job application. Be honest and base
                 form_data = {}
                 for question_info in custom_questions:
                     answer = self._answer_custom_question(
-                        question_info['question'],
-                        question_info['type']
+                        question=question_info['question'],
+                        field_type=question_info['type'],
+                        options=question_info.get('options') if isinstance(question_info, dict) else None,
                     )
                     form_data[question_info['id']] = {
                         'question': question_info['question'],
@@ -317,28 +415,72 @@ Provide a professional answer suitable for a job application. Be honest and base
                             if field_data['type'] in ['text', 'textarea']:
                                 element.fill(field_data['answer'])
                             elif field_data['type'] == 'select':
-                                # Try to select the best matching option
-                                element.select_option(label=field_data['answer'])
+                                # Smart selection: try exact match first, then fallback to "Other"
+                                try:
+                                    element.select_option(label=field_data['answer'])
+                                    logger.info(f"Selected option: {field_data['answer']}")
+                                except Exception as select_error:
+                                    # If exact match fails (e.g., "Corporate Website" not in options)
+                                    # Try "Other" as fallback
+                                    logger.info(f"Option '{field_data['answer']}' not found, trying 'Other'...")
+                                    try:
+                                        element.select_option(label="Other")
+                                        logger.info("Selected 'Other' as fallback")
+                                    except:
+                                        # Try case-insensitive match for "other"
+                                        options = element.locator('option').all_inner_texts()
+                                        other_option = next((opt for opt in options if 'other' in opt.lower()), None)
+                                        if other_option:
+                                            element.select_option(label=other_option)
+                                            logger.info(f"Selected '{other_option}' as fallback")
+                                        else:
+                                            raise select_error  # Re-raise if no fallback found
                             logger.info(f"Filled custom field: {field_data['question'][:50]}...")
                     except Exception as e:
                         logger.warning(f"Could not fill field {field_id}: {e}")
 
+                # Check for validation errors before submitting
+                error_messages = page.locator('.error, .field-error, [class*="error"], [role="alert"]').all_inner_texts()
+                if error_messages:
+                    logger.warning(f"Found validation errors before submission: {error_messages}")
+                
                 # Submit the application
                 submit_button = page.locator('button[type="submit"], input[type="submit"], button:has-text("Submit")').first
                 if submit_button.count() > 0:
                     logger.info("Submitting application...")
+                    
+                    # Take screenshot before submission
+                    pre_submit_path = f"screenshots/pre_submit_{job.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+                    Path("screenshots").mkdir(exist_ok=True)
+                    page.screenshot(path=pre_submit_path)
+                    logger.info(f"Pre-submission screenshot: {pre_submit_path}")
+                    
                     submit_button.click()
 
-                    # Wait for confirmation or error
-                    time.sleep(3)
+                    # Wait for confirmation or error (increased wait time)
+                    time.sleep(5)
+                    
+                    # Take screenshot after submission
+                    post_submit_path = f"screenshots/post_submit_{job.id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+                    page.screenshot(path=post_submit_path)
+                    logger.info(f"Post-submission screenshot: {post_submit_path}")
+
+                    # Check for error messages
+                    error_messages = page.locator('.error, .field-error, [class*="error"], [role="alert"]').all_inner_texts()
+                    if error_messages:
+                        logger.error(f"Form validation errors: {error_messages}")
+                        return False, f"Form validation errors: {'; '.join(error_messages)}"
 
                     # Check for success message
                     success_indicators = [
                         'Thank you', 'submitted', 'received', 'confirmation',
-                        'We\'ll be in touch', 'Application complete'
+                        'We\'ll be in touch', 'Application complete', 'application has been',
+                        'successfully submitted', 'we received your application'
                     ]
 
                     page_text = page.inner_text('body').lower()
+                    logger.info(f"Page text after submission (first 500 chars): {page_text[:500]}")
+                    
                     if any(indicator.lower() in page_text for indicator in success_indicators):
                         logger.info("Application submitted successfully!")
 
