@@ -172,13 +172,7 @@ Using OpenAI APIs:
 
 **Estimated**: ~$2-3 for 100 applications
 
-## Disclaimer
 
-This tool is for personal use. Please:
-- Respect job platforms' Terms of Service
-- Review applications before submitting
-- Use rate limiting responsibly
-- Be honest in your applications
 
 **Use at your own risk.** The authors are not responsible for any consequences.
 
