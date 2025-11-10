@@ -64,5 +64,14 @@ Thumbs.db
 resume.pdf
 resume.docx
 
+# Private development files
+private/
+screenshots/
+user_data.json
+
+# Test and development files
+test_*.py
+*_test.py
+
 # Node modules (if any)
 node_modules/
