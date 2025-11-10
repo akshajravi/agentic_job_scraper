@@ -1,0 +1,167 @@
+{
+  "contact": {
+    "first_name": "Akshaj",
+    "last_name": "Ravi",
+    "full_name": "Akshaj Ravi",
+    "email": "ajravi214@tamu.edu",
+    "phone": "214-616-5324",
+    "location": "Dallas, Texas",
+    "city": "Dallas",
+    "state": "Texas",
+    "zip_code": "75063",
+    "country": "United States",
+    "linkedin_url": "https://www.linkedin.com/in/akshajravi/",
+    "github_url": "https://github.com/akshajravi",
+    "portfolio_url": "",
+    "website": ""
+  },
+  "education": {
+    "school": "Texas A&M University",
+    "university": "Texas A&M University",
+    "degree": "Bachelor of Science",
+    "major": "Computer Engineering",
+    "minor": "",
+    "gpa": "3.9",
+    "graduation_date": "May 2027",
+    "graduation_month": "May",
+    "graduation_year": "2027",
+    "expected_graduation": "May 2027",
+    "start_date": "August 2024",
+    "currently_enrolled": true
+  },
+  "work_authorization": {
+    "us_citizen": true,
+    "require_visa_sponsorship": false,
+    "work_authorization_status": "Citizen",
+    "authorized_to_work_in_us": true,
+    "require_sponsorship_now": false,
+    "require_sponsorship_future": false,
+    "visa_type": "",
+    "eligible_for_cpt": false,
+    "eligible_for_opt": false
+  },
+  "demographics": {
+    "gender": "Male",
+    "ethnicity": "Asian",
+    "race": "South Asian",
+    "veteran_status": "No",
+    "disability_status": "No",
+    "lgbtq": "No"
+  },
+  "experience": [
+    {
+      "title": "",
+      "company": "",
+      "location": "",
+      "start_date": "",
+      "end_date": "",
+      "currently_working": false,
+      "description": "",
+      "responsibilities": ""
+    }
+  ],
+  "skills": {
+    "programming_languages": [],
+    "frameworks": [],
+    "tools": [],
+    "technologies": [],
+    "soft_skills": [],
+    "languages_spoken": []
+  },
+  "projects": [
+    {
+      "name": "",
+      "description": "",
+      "technologies": [],
+      "url": "",
+      "github_url": ""
+    }
+  ],
+  "certifications": [
+    {
+      "name": "",
+      "issuing_organization": "",
+      "issue_date": "",
+      "expiration_date": "",
+      "credential_id": "",
+      "url": ""
+    }
+  ],
+  "questions": {
+    "cover_letter": "",
+    "why_interested": "",
+    "why_this_company": "",
+    "why_this_position": "",
+    "what_you_bring": "",
+    "greatest_strength": "",
+    "greatest_weakness": "",
+    "tell_us_about_yourself": "",
+    "describe_relevant_experience": "",
+    "career_goals": "",
+    "available_start_date": "",
+    "salary_expectations": "",
+    "preferred_location": "",
+    "willing_to_relocate": false,
+    "how_did_you_hear_about_us": "",
+    "referral_name": "",
+    "referral_email": ""
+  },
+  "internship_specific": {
+    "year_in_school": "",
+    "classification": "",
+    "available_for_full_time_after": false,
+    "preferred_internship_duration": "",
+    "available_hours_per_week": "",
+    "seeking_academic_credit": false,
+    "preferred_start_date": "",
+    "preferred_end_date": "",
+    "previous_internships": [],
+    "returning_intern": false
+  },
+  "technical_background": {
+    "years_of_programming_experience": "",
+    "most_proficient_language": "",
+    "familiar_with_agile": false,
+    "familiar_with_version_control": false,
+    "version_control_tools": [],
+    "database_experience": [],
+    "cloud_platform_experience": [],
+    "previous_collaborative_projects": "",
+    "code_portfolio_link": ""
+  },
+  "behavioral_questions": {
+    "describe_challenging_project": "",
+    "how_you_handle_deadlines": "",
+    "example_of_teamwork": "",
+    "conflict_resolution_example": "",
+    "time_you_failed": "",
+    "time_you_learned_quickly": "",
+    "innovative_solution_example": "",
+    "leadership_example": ""
+  },
+  "preferences": {
+    "work_environment_preference": "",
+    "remote_or_onsite": "",
+    "team_size_preference": "",
+    "preferred_team_type": "",
+    "working_hours_preference": "",
+    "overtime_availability": false
+  },
+  "legal_questions": {
+    "over_18": true,
+    "background_check_consent": true,
+    "drug_test_consent": true,
+    "previous_employment_here": false,
+    "previous_application_here": false,
+    "know_anyone_at_company": false,
+    "convicted_of_felony": false
+  },
+  "additional_info": {
+    "anything_else_to_share": "",
+    "questions_for_us": "",
+    "special_accommodations": "",
+    "notice_period_current_job": "",
+    "other_applications_pending": false
+  }
+}
+

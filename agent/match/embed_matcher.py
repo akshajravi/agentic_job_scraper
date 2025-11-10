@@ -9,14 +9,15 @@ import numpy as np
 from openai import OpenAI
 
 from agent.config import settings
+from agent.match.user_data_loader import UserData
 from agent.storage.db import get_db
-from agent.storage.models import Job, JobStatus, ResumeData
+from agent.storage.models import Job, JobStatus
 
 logger = logging.getLogger(__name__)
 
 
 class EmbeddingMatcher:
-    """Matches jobs to resumes using OpenAI embeddings and cosine similarity."""
+    """Matches jobs to user profiles using OpenAI embeddings and cosine similarity."""
 
     def __init__(self, openai_api_key: Optional[str] = None):
         """Initialize the embedding matcher.
@@ -68,21 +69,21 @@ class EmbeddingMatcher:
 
         return float(dot_product / (norm1 * norm2))
 
-    def _generate_match_reason(self, resume_data: ResumeData, job: Job, similarity_score: float) -> str:
+    def _generate_match_reason(self, user_data: UserData, job: Job, similarity_score: float) -> str:
         """Use OpenAI to generate a human-readable match reason.
 
         Args:
-            resume_data: Parsed resume data
+            user_data: User data from JSON
             job: Job posting
             similarity_score: Calculated similarity score
 
         Returns:
             Human-readable explanation of why this is a good match
         """
-        resume_summary = f"""
-Skills: {', '.join(resume_data.skills[:10])}
-Latest Experience: {resume_data.experiences[0] if resume_data.experiences else 'N/A'}
-Education: {resume_data.education.get('degree', 'N/A')} from {resume_data.education.get('school', 'N/A')}
+        user_summary = f"""
+Skills: {', '.join(user_data.skills[:10])}
+Latest Experience: {user_data.experiences[0] if user_data.experiences else 'N/A'}
+Education: {user_data.education.get('degree', 'N/A')} from {user_data.education.get('school', 'N/A')}
 """
 
         job_summary = f"""
@@ -102,10 +103,10 @@ Description: {job.description[:500] if job.description else 'N/A'}
                     },
                     {
                         "role": "user",
-                        "content": f"""Based on the resume and job posting below, explain why this is a good match (similarity score: {similarity_score:.2f}).
+                        "content": f"""Based on the user profile and job posting below, explain why this is a good match (similarity score: {similarity_score:.2f}).
 
-RESUME:
-{resume_summary}
+USER PROFILE:
+{user_summary}
 
 JOB:
 {job_summary}
@@ -123,60 +124,34 @@ Provide a concise, specific reason focusing on relevant skills or experience."""
             logger.warning(f"Failed to generate match reason: {e}")
             return f"Match score: {similarity_score:.2f}"
 
-    def generate_resume_embedding(self, resume_data: ResumeData) -> List[float]:
-        """Generate and cache embedding for resume.
+    def generate_user_embedding(self, user_data: UserData) -> List[float]:
+        """Generate embedding for user data.
 
         Args:
-            resume_data: Parsed resume data
+            user_data: User data from JSON
 
         Returns:
-            Embedding vector for the resume
+            Embedding vector for the user profile
         """
-        # Check if resume already has embedding
-        if resume_data.embedding:
-            logger.info("Using cached resume embedding")
-            return resume_data.embedding
+        # Use the built-in summary method
+        user_summary = user_data.get_summary_text()
+        logger.info(f"Generating embedding for user data (length: {len(user_summary)} chars)")
 
-        # Generate resume summary text
-        summary_parts = []
-
-        if resume_data.skills:
-            summary_parts.append(f"Technical Skills: {', '.join(resume_data.skills)}")
-
-        if resume_data.experiences:
-            for exp in resume_data.experiences[:3]:  # Top 3 experiences
-                exp_text = f"{exp.get('title')} at {exp.get('company')}: {exp.get('description', '')[:200]}"
-                summary_parts.append(exp_text)
-
-        if resume_data.education:
-            edu = resume_data.education
-            summary_parts.append(f"{edu.get('degree')} from {edu.get('school')}")
-
-        resume_summary = "\n".join(summary_parts)
-        logger.info(f"Generating embedding for resume (length: {len(resume_summary)} chars)")
-
-        embedding = self._get_embedding(resume_summary)
-
-        # Cache the embedding in the database
-        with get_db() as db:
-            resume = db.query(ResumeData).filter(ResumeData.id == resume_data.id).first()
-            if resume:
-                resume.embedding = embedding
-                db.commit()
-                logger.info("Cached resume embedding in database")
+        embedding = self._get_embedding(user_summary)
+        logger.info("Generated user embedding")
 
         return embedding
 
     def match_jobs(
         self,
-        resume_data: ResumeData,
+        user_data: UserData,
         threshold: float = None,
         generate_reasons: bool = True
     ) -> int:
-        """Match jobs against resume using embeddings.
+        """Match jobs against user profile using embeddings.
 
         Args:
-            resume_data: Parsed resume data with embedding
+            user_data: User data from JSON
             threshold: Minimum similarity score for a match (default from settings)
             generate_reasons: Whether to generate AI match reasons
 
@@ -186,8 +161,8 @@ Provide a concise, specific reason focusing on relevant skills or experience."""
         if threshold is None:
             threshold = settings.match_threshold
 
-        # Get resume embedding
-        resume_embedding = self.generate_resume_embedding(resume_data)
+        # Get user embedding
+        user_embedding = self.generate_user_embedding(user_data)
 
         # Get all NEW jobs
         with get_db() as db:
@@ -211,7 +186,7 @@ Provide a concise, specific reason focusing on relevant skills or experience."""
                 job_embedding = self._get_embedding(job_summary)
 
                 # Calculate similarity
-                similarity = self._cosine_similarity(resume_embedding, job_embedding)
+                similarity = self._cosine_similarity(user_embedding, job_embedding)
 
                 logger.info(f"Job '{job.title}' at {job.company}: similarity = {similarity:.3f}")
 
@@ -222,7 +197,7 @@ Provide a concise, specific reason focusing on relevant skills or experience."""
                     # Generate match reason
                     if generate_reasons:
                         try:
-                            match_reason = self._generate_match_reason(resume_data, job, similarity)
+                            match_reason = self._generate_match_reason(user_data, job, similarity)
                         except Exception as e:
                             logger.warning(f"Could not generate match reason: {e}")
                             match_reason = f"Similarity score: {similarity:.2f}"
@@ -245,15 +220,15 @@ Provide a concise, specific reason focusing on relevant skills or experience."""
             return matched_count
 
 
-def match_jobs_for_resume(
-    resume_data: ResumeData,
+def match_jobs_for_user(
+    user_data: UserData,
     threshold: float = None,
     generate_reasons: bool = True
 ) -> int:
-    """Convenience function to match jobs against a resume.
+    """Convenience function to match jobs against user data.
 
     Args:
-        resume_data: Parsed resume data
+        user_data: User data from JSON
         threshold: Minimum similarity score for a match
         generate_reasons: Whether to generate AI match reasons
 
@@ -261,4 +236,4 @@ def match_jobs_for_resume(
         Number of jobs matched
     """
     matcher = EmbeddingMatcher()
-    return matcher.match_jobs(resume_data, threshold, generate_reasons)
+    return matcher.match_jobs(user_data, threshold, generate_reasons)

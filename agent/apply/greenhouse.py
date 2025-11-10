@@ -11,8 +11,9 @@ from openai import OpenAI
 from playwright.sync_api import Page, TimeoutError as PlaywrightTimeout, sync_playwright
 
 from agent.config import settings
+from agent.match.user_data_loader import UserData
 from agent.storage.db import get_db
-from agent.storage.models import Application, ApplicationStatus, Job, JobStatus, ResumeData
+from agent.storage.models import Application, ApplicationStatus, Job, JobStatus
 
 logger = logging.getLogger(__name__)
 
@@ -22,25 +23,25 @@ class GreenhouseApplier:
 
     def __init__(
         self,
-        resume_data: ResumeData,
-        resume_pdf_path: str | Path,
+        user_data: UserData,
+        resume_pdf_path: str | Path = None,
         headless: bool = None,
         openai_api_key: Optional[str] = None
     ):
         """Initialize Greenhouse applier.
 
         Args:
-            resume_data: Parsed resume data
-            resume_pdf_path: Path to resume PDF file for upload
+            user_data: User data loaded from JSON
+            resume_pdf_path: Path to resume PDF file for upload (optional)
             headless: Run browser in headless mode (default from settings)
             openai_api_key: OpenAI API key for answering custom questions
         """
-        self.resume_data = resume_data
-        self.resume_pdf_path = Path(resume_pdf_path)
+        self.user_data = user_data
+        self.resume_pdf_path = Path(resume_pdf_path) if resume_pdf_path else None
         self.headless = headless if headless is not None else settings.headless
         self.openai_client = OpenAI(api_key=openai_api_key or settings.openai_api_key)
 
-        if not self.resume_pdf_path.exists():
+        if self.resume_pdf_path and not self.resume_pdf_path.exists():
             raise FileNotFoundError(f"Resume PDF not found: {self.resume_pdf_path}")
 
     def _answer_custom_question(self, question: str, field_type: str = "text") -> str:
@@ -55,11 +56,11 @@ class GreenhouseApplier:
         """
         logger.info(f"Generating answer for: {question}")
 
-        resume_context = f"""
-Name: {self.resume_data.contact.get('name', 'Unknown')}
-Skills: {', '.join(self.resume_data.skills[:15])}
-Latest Experience: {self.resume_data.experiences[0] if self.resume_data.experiences else 'N/A'}
-Education: {self.resume_data.education.get('degree', 'N/A')} from {self.resume_data.education.get('school', 'N/A')}
+        user_context = f"""
+Name: {self.user_data.contact.get('full_name', 'Unknown')}
+Skills: {', '.join(self.user_data.skills[:15])}
+Latest Experience: {self.user_data.experiences[0] if self.user_data.experiences else 'N/A'}
+Education: {self.user_data.education.get('degree', 'N/A')} from {self.user_data.education.get('school', 'N/A')}
 """
 
         try:
@@ -75,12 +76,12 @@ For longer text fields (cover letters, etc.), you can write 200-300 words."""
                     },
                     {
                         "role": "user",
-                        "content": f"""Resume Context:
-{resume_context}
+                        "content": f"""User Context:
+{user_context}
 
 Question: {question}
 
-Provide a professional answer suitable for a job application. Be honest and based only on the resume information provided."""
+Provide a professional answer suitable for a job application. Be honest and based only on the user information provided."""
                     }
                 ],
                 temperature=0.5,
@@ -200,19 +201,19 @@ Provide a professional answer suitable for a job application. Be honest and base
             True if successful, False otherwise
         """
         try:
-            contact = self.resume_data.contact
+            contact = self.user_data.contact
 
             # First name
             first_name_input = page.locator('input[name*="first_name"], input[id*="first_name"]').first
             if first_name_input.count() > 0:
-                first_name = contact.get('name', '').split()[0] if contact.get('name') else ''
+                first_name = contact.get('first_name', '')
                 first_name_input.fill(first_name)
                 logger.info(f"Filled first name: {first_name}")
 
             # Last name
             last_name_input = page.locator('input[name*="last_name"], input[id*="last_name"]').first
             if last_name_input.count() > 0:
-                last_name = ' '.join(contact.get('name', '').split()[1:]) if contact.get('name') else ''
+                last_name = contact.get('last_name', '')
                 last_name_input.fill(last_name)
                 logger.info(f"Filled last name: {last_name}")
 
@@ -231,12 +232,13 @@ Provide a professional answer suitable for a job application. Be honest and base
                     phone_input.fill(phone)
                     logger.info(f"Filled phone: {phone}")
 
-            # Resume upload
-            resume_upload = page.locator('input[type="file"]').first
-            if resume_upload.count() > 0:
-                resume_upload.set_input_files(str(self.resume_pdf_path.absolute()))
-                logger.info(f"Uploaded resume: {self.resume_pdf_path.name}")
-                time.sleep(1)  # Wait for upload
+            # Resume upload (only if provided)
+            if self.resume_pdf_path:
+                resume_upload = page.locator('input[type="file"]').first
+                if resume_upload.count() > 0:
+                    resume_upload.set_input_files(str(self.resume_pdf_path.absolute()))
+                    logger.info(f"Uploaded resume: {self.resume_pdf_path.name}")
+                    time.sleep(1)  # Wait for upload
 
             return True
 

@@ -18,8 +18,8 @@ from agent.apply.review_ui import show_review_ui
 from agent.config import settings
 from agent.ingest.github_repos import GitHubJobScraper
 from agent.ingest.normalize import JobNormalizer
-from agent.match.embed_matcher import match_jobs_for_resume
-from agent.match.resume_parser import parse_resume
+from agent.match.embed_matcher import match_jobs_for_user
+from agent.match.user_data_loader import load_user_data, validate_user_data
 from agent.notify.email import send_summary_email
 from agent.storage.db import get_db
 from agent.storage.models import Job, JobStatus
@@ -86,18 +86,18 @@ def scrape_jobs() -> int:
     return total_new
 
 
-def match_jobs(resume_path: str, threshold: float = None) -> int:
-    """Match jobs against resume using AI embeddings.
+def match_jobs(user_data_path: str, threshold: float = None) -> int:
+    """Match jobs against user data using AI embeddings.
 
     Args:
-        resume_path: Path to resume PDF
+        user_data_path: Path to user data JSON file
         threshold: Match score threshold (default from settings)
 
     Returns:
         Number of jobs matched
     """
     console.print(Panel.fit(
-        "[bold cyan]Stage 2: Matching Jobs to Resume",
+        "[bold cyan]Stage 2: Matching Jobs to User Profile",
         border_style="cyan"
     ))
 
@@ -106,14 +106,19 @@ def match_jobs(resume_path: str, threshold: float = None) -> int:
         TextColumn("[progress.description]{task.description}"),
         console=console
     ) as progress:
-        # Parse resume
-        task = progress.add_task("Parsing resume PDF...", total=None)
-        resume_data = parse_resume(resume_path)
-        progress.update(task, description="[green][/green] Resume parsed", completed=True)
+        # Load user data
+        task = progress.add_task("Loading user data...", total=None)
+        user_data = load_user_data(user_data_path)
+        
+        # Validate user data
+        is_valid, missing_fields = validate_user_data(user_data)
+        if not is_valid:
+            console.print(f"[yellow]Warning: Missing required fields: {', '.join(missing_fields)}[/yellow]")
+        progress.update(task, description="[green][/green] User data loaded", completed=True)
 
         # Generate embeddings and match
         task = progress.add_task("Generating embeddings and matching jobs...", total=None)
-        matched_count = match_jobs_for_resume(resume_data, threshold)
+        matched_count = match_jobs_for_user(user_data, threshold)
         progress.update(task, description=f"[green][/green] Matched {matched_count} jobs", completed=True)
 
     # Display top matches
@@ -144,11 +149,12 @@ def match_jobs(resume_path: str, threshold: float = None) -> int:
     return matched_count
 
 
-def apply_to_jobs(resume_path: str, manual_review: bool = False, max_applications: int = None) -> tuple:
+def apply_to_jobs(user_data_path: str, resume_pdf_path: str = None, manual_review: bool = False, max_applications: int = None) -> tuple:
     """Apply to matched jobs.
 
     Args:
-        resume_path: Path to resume PDF
+        user_data_path: Path to user data JSON file
+        resume_pdf_path: Path to resume PDF for upload (optional)
         manual_review: If True, show review UI before each submission
         max_applications: Maximum number of applications to send
 
@@ -163,8 +169,8 @@ def apply_to_jobs(resume_path: str, manual_review: bool = False, max_application
     if max_applications is None:
         max_applications = settings.max_applications_per_day
 
-    # Get resume data
-    resume_data = parse_resume(resume_path)
+    # Load user data
+    user_data = load_user_data(user_data_path)
 
     # Get matched jobs
     with get_db() as db:
@@ -181,8 +187,8 @@ def apply_to_jobs(resume_path: str, manual_review: bool = False, max_application
 
     # Initialize applier
     applier = GreenhouseApplier(
-        resume_data=resume_data,
-        resume_pdf_path=resume_path,
+        user_data=user_data,
+        resume_pdf_path=resume_pdf_path,
         headless=not manual_review  # Show browser in manual review mode
     )
 
@@ -198,7 +204,7 @@ def apply_to_jobs(resume_path: str, manual_review: bool = False, max_application
 
         # Define review callback
         def review_callback(page, form_data, job_obj):
-            return show_review_ui(page, form_data, job_obj, resume_data.contact)
+            return show_review_ui(page, form_data, job_obj, user_data.contact)
 
         try:
             success, message = applier.apply_to_job(
@@ -262,23 +268,30 @@ def main():
         epilog="""
 Examples:
   # Full pipeline with manual review
-  python run.py --resume resume.pdf --manual-review
+  python run.py --user-data user_data.json --resume-pdf resume.pdf --manual-review
 
   # Just scrape and match (dry run)
-  python run.py --resume resume.pdf --dry-run
+  python run.py --user-data user_data.json --dry-run
 
   # Scrape only
   python run.py --scrape-only
 
-  # Apply to max 5 jobs
-  python run.py --resume resume.pdf --max-applications 5
+  # Apply to max 5 jobs (without resume PDF upload)
+  python run.py --user-data user_data.json --max-applications 5
         """
     )
 
     parser.add_argument(
-        "--resume",
+        "--user-data",
         type=str,
-        help="Path to resume PDF file"
+        default="user_data.json",
+        help="Path to user data JSON file (default: user_data.json)"
+    )
+
+    parser.add_argument(
+        "--resume-pdf",
+        type=str,
+        help="Path to resume PDF file for upload (optional)"
     )
 
     parser.add_argument(
@@ -336,13 +349,17 @@ Examples:
     run_match = args.match or (not args.scrape_only and (not any([args.scrape, args.match, args.apply]) or args.dry_run))
     run_apply = args.apply or (not args.scrape_only and not args.dry_run and not any([args.scrape, args.match, args.apply]))
 
-    # Validate resume path if matching or applying
-    if (run_match or run_apply) and not args.resume:
-        console.print("[red]Error: --resume is required for matching and applying[/red]")
-        sys.exit(1)
+    # Validate user data path if matching or applying
+    if (run_match or run_apply):
+        if not Path(args.user_data).exists():
+            console.print(f"[red]Error: User data file not found: {args.user_data}[/red]")
+            console.print("[yellow]Please create a user_data.json file with your information.[/yellow]")
+            console.print("[yellow]See user_data.json template for the expected structure.[/yellow]")
+            sys.exit(1)
 
-    if args.resume and not Path(args.resume).exists():
-        console.print(f"[red]Error: Resume file not found: {args.resume}[/red]")
+    # Validate resume PDF if provided
+    if args.resume_pdf and not Path(args.resume_pdf).exists():
+        console.print(f"[red]Error: Resume PDF not found: {args.resume_pdf}[/red]")
         sys.exit(1)
 
     # Print header
@@ -372,7 +389,7 @@ Examples:
 
         # Stage 2: Match
         if run_match:
-            stats['matched'] = match_jobs(args.resume, args.match_threshold)
+            stats['matched'] = match_jobs(args.user_data, args.match_threshold)
 
             # Get matched jobs for notification
             with get_db() as db:
@@ -383,7 +400,8 @@ Examples:
         # Stage 3: Apply
         if run_apply:
             applied, successful, results = apply_to_jobs(
-                args.resume,
+                args.user_data,
+                resume_pdf_path=args.resume_pdf,
                 manual_review=args.manual_review,
                 max_applications=args.max_applications
             )

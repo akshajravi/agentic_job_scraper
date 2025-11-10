@@ -31,8 +31,5 @@ python-dateutil>=2.8.0
 pytz>=2024.1
 pyyaml>=6.0
 
-# PDF processing
-pdfplumber>=0.11.0
-
 # CLI interface
 rich>=13.7.0
